@@ -7,7 +7,7 @@ use tracing_subscriber::{
 mod common;
 use common::trustify::Trustify;
 
-const BIND_ADDRESS: &str = "127.0.0.1:8081";
+const BIND_ADDRESS: &str = "[::]:8081";
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
