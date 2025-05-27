@@ -207,7 +207,7 @@ impl Trustify {
             .await?;
 
         // Parse the response
-        let vulnerability_details: HashMap<String, Vec<VulnerabilityDetails>> =
+        let mut vulnerability_details: HashMap<String, Vec<VulnerabilityDetails>> =
             match response.json() {
                 Ok(response_json) => response_json,
                 Err(error) => {
@@ -218,14 +218,55 @@ impl Trustify {
                 }
             };
 
+        // Response "slimming" by removing some data
+        for (_purl, vulnerabilities) in vulnerability_details.iter_mut() {
+            vulnerabilities.iter_mut().for_each(|vulnerability| {
+                vulnerability.head.description = None;
+                vulnerability.head.reserved = None;
+                vulnerability.head.modified = None;
+                vulnerability.advisories.iter_mut().for_each(|advisory| {
+                    advisory.head.head.document_id = "".to_string();
+                    advisory.head.head.issuer = None;
+                    advisory.head.head.published = None;
+                    advisory.head.head.modified = None;
+                    advisory.head.head.title = None;
+                    advisory.head.severity = None;
+                    advisory.head.score = None;
+                    advisory.cvss3_scores = vec![];
+                })
+            })
+        }
+
         Ok(CallToolResult::success(vec![Content::json(
             vulnerability_details,
         )?]))
+
+        // (trivial and basic) example of "DTO" with each PURL associated with just the array of the
+        // CVE IDs affecting it
         // let mut response = HashMap::new();
         // for (purl, vulnerabilities) in vulnerability_details.iter() {
-        //     response.insert(purl, vulnerabilities[0].head.identifier.clone());
+        //     // response.insert(purl.as_str(), vulnerabilities[0].head.identifier.clone());
+        //     let mut cves: HashSet<String> = HashSet::new();
+        //     for vulnerability in vulnerabilities {
+        //         cves.insert(vulnerability.head.identifier.clone());
+        //     }
+        //     response.insert(purl.as_str(), cves);
         // }
         // Ok(CallToolResult::success(vec![Content::json(response)?]))
+    }
+
+    #[tool(description = "Get the details of a vulnerability from a trustify instance by CVE ID")]
+    async fn trustify_vulnerability_details(
+        &self,
+        #[tool(param)]
+        #[schemars(description = r#"Vulnerability CVE ID"#)]
+        cve_id: String,
+    ) -> Result<CallToolResult, McpError> {
+        self.get(format!(
+            "{}/api/v2/vulnerability/{}",
+            self.api_base_url, cve_id
+        ))
+        .await
     }
 
     #[tool(description = "URL encode a string")]
