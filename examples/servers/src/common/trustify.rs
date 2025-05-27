@@ -144,7 +144,7 @@ impl Trustify {
     async fn trustify_vulnerabilities_list(
         &self,
         #[tool(param)]
-        #[schemars(description = "Query for vulnerabilities, e.g. average_severity=critical|high")]
+        #[schemars(description = "Query for vulnerabilities, e.g. base_severity=critical|high")]
         query: String,
         #[tool(param)]
         #[schemars(description = "Maximum number of packages to return, default 1000")]
